@@ -154,6 +154,13 @@
   .cell-locked-editable { width: 100%; padding: 6px 8px; border: 1.5px solid rgba(26,92,56,0.15); border-radius: var(--radius-sm); font-size: 12px; font-family: inherit; background: rgba(26,92,56,0.03); transition: all 0.15s; color: var(--gray-900); }
   .cell-locked-editable:focus { outline: none; border-color: var(--green-accent); background: white; box-shadow: 0 0 0 3px rgba(58,157,100,0.1); }
 
+  /* ── PRIORITY BADGES ── */
+  .priority-badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+  .priority-badge.priority-rendah { background: #d1fae5; color: #065f46; }
+  .priority-badge.priority-normal { background: #fef9c3; color: #854d0e; }
+  .priority-badge.priority-tinggi { background: #ffedd5; color: #9a3412; }
+  .priority-badge.priority-mendesak { background: #fee2e2; color: #991b1b; }
+
   /* ── STATUS BADGES ── */
   .status-badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap; }
   .status-badge.menunggu { background: #fff3cd; color: #856404; }
@@ -318,8 +325,9 @@
           <input type="text" class="form-input" id="f_judul" placeholder="Contoh: Poster Penerimaan Mahasiswa Baru 2025">
         </div>
         <div class="form-group full">
-          <label class="form-label">Gambaran & Isi Konten <span class="required">*</span></label>
-          <textarea class="form-textarea" id="f_gambaran" placeholder="Jelaskan detail konten: ukuran, warna, elemen visual, teks utama, dll." style="min-height:90px"></textarea>
+          <label class="form-label">Link Gambaran & Isi Konten <span class="required">*</span></label>
+          <input type="url" class="form-input" id="f_gambaran" placeholder="https://docs.google.com/... atau https://drive.google.com/...">
+          <span class="form-hint">Tempel link Google Drive / Google Docs yang berisi detail konten (ukuran, warna, teks, dll.)</span>
         </div>
         <div class="form-group">
           <label class="form-label">Tipe Konten <span class="required">*</span></label>
@@ -339,6 +347,16 @@
           <label class="form-label">No. WhatsApp <span class="required">*</span></label>
           <input type="text" class="form-input" id="f_wa" placeholder="628xxxxxxxxxx">
           <span class="form-hint">Format: 628... (tanpa + atau spasi)</span>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Skala Prioritas <span class="required">*</span></label>
+          <select class="form-select" id="f_prioritas">
+            <option value="">-- Pilih Prioritas --</option>
+            <option value="Rendah">🟢 Rendah</option>
+            <option value="Normal">🟡 Normal</option>
+            <option value="Tinggi">🟠 Tinggi</option>
+            <option value="Mendesak">🔴 Mendesak</option>
+          </select>
         </div>
         <div class="form-group">
           <label class="form-label">Target Deadline</label>
@@ -467,6 +485,7 @@
             <th style="min-width:160px">Judul / Brief</th>
             <th style="min-width:200px">Gambaran & Isi Konten</th>
             <th style="min-width:110px">Tipe Konten</th>
+            <th style="min-width:100px">Prioritas</th>
             <th style="min-width:170px">PIC Requester</th>
             <th style="min-width:100px">Deadline</th>
             <th class="locked" style="min-width:100px">PIC Desainer</th>
@@ -477,7 +496,7 @@
           </tr>
         </thead>
         <tbody id="tableBody">
-          <tr class="loading-row"><td colspan="13"><span class="spinner"></span> Memuat data...</td></tr>
+          <tr class="loading-row"><td colspan="14"><span class="spinner"></span> Memuat data...</td></tr>
         </tbody>
       </table>
     </div>
@@ -492,7 +511,7 @@ const DESIGNER_PASSWORD = 'MSwisata2024';
 
 // Nomor WhatsApp Tim Desainer
 const DESIGNER_CONTACTS = {
-  'Zidan':  '6285156615561',
+  'Zidan':  '6285156625561',
   'Ayyash': '6281779940421',
   'Dani':   '6287772368128'
 };
@@ -631,7 +650,7 @@ async function saveToSheet(action, data) {
 // ════════════════════════════════════════════
 function sanitizeRow(r) {
   const fields = ['id','divisi','divisiCustom','lembaga','lembagaCustom','judul',
-    'gambaran','tipe','tipeCustom','nama','wa','deadline','pic','estimasi','status','link'];
+    'gambaran','tipe','tipeCustom','nama','wa','deadline','prioritas','pic','estimasi','status','link'];
   const clean = {};
   fields.forEach(f => { clean[f] = String(r[f] ?? ''); });
   return clean;
@@ -677,7 +696,7 @@ function renderTable() {
   document.getElementById('resultCount').textContent = `${filtered.length} request ditampilkan`;
   const tbody = document.getElementById('tableBody');
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="13"><div class="empty-state"><div class="empty-state-icon">🔍</div><h3>Tidak ada data</h3><p>Coba ubah filter atau tambah request baru.</p></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="14"><div class="empty-state"><div class="empty-state-icon">🔍</div><h3>Tidak ada data</h3><p>Coba ubah filter atau tambah request baru.</p></div></td></tr>`;
     return;
   }
   tbody.innerHTML = filtered.map((r, i) => {
@@ -686,6 +705,7 @@ function renderTable() {
     const lemLabel = r.lembagaCustom || r.lembaga;
     const tipLabel = r.tipeCustom || r.tipe;
     const statusBadge = getStatusBadge(r.status);
+    const prioritasBadge = getPriorityBadge(r.prioritas);
     const locked = !isDesignerMode;
 
     // Kolom requester — editable hanya untuk desainer
@@ -693,8 +713,8 @@ function renderTable() {
       ? `<div class="cell-locked" style="font-style:normal;color:var(--gray-900)">${escHTML(r.judul||'–')}</div>`
       : `<input class="cell-input" value="${escAttr(r.judul)}" onchange="updateField('${r.id}','judul',this.value)" placeholder="Judul konten">`;
     const gambaranCell = locked
-      ? `<div class="cell-locked" style="font-style:normal;color:var(--gray-900);white-space:pre-line">${escHTML(r.gambaran||'–')}</div>`
-      : `<textarea class="cell-textarea" onchange="updateField('${r.id}','gambaran',this.value)" placeholder="Gambaran isi...">${escHTML(r.gambaran)}</textarea>`;
+      ? (r.gambaran ? `<div class="link-group"><a class="link-open" href="${escAttr(r.gambaran)}" target="_blank" rel="noopener" title="Buka link konten">📄</a><span style="font-size:11px;color:var(--gray-500);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:130px;display:inline-block;vertical-align:middle">${escHTML(r.gambaran)}</span></div>` : '<span style="color:var(--gray-400);font-size:12px">–</span>')
+      : `<div class="link-group"><input class="link-input cell-locked-editable" value="${escAttr(r.gambaran)}" placeholder="https://docs.google.com/..." onchange="updateField('${r.id}','gambaran',this.value)">${r.gambaran ? `<a class="link-open" href="${escAttr(r.gambaran)}" target="_blank" rel="noopener">📄</a>` : ''}</div>`;
     const deadlineCell = locked
       ? `<div class="cell-locked" style="font-style:normal;color:var(--gray-900)">${escHTML(r.deadline||'–')}</div>`
       : `<input class="cell-input" type="date" value="${escAttr(r.deadline)}" onchange="updateField('${r.id}','deadline',this.value)">`;
@@ -743,6 +763,7 @@ function renderTable() {
       <td>${judulCell}</td>
       <td>${gambaranCell}</td>
       <td class="no-strike">${escHTML(tipLabel)}</td>
+      <td class="no-strike">${prioritasBadge}</td>
       <td class="no-strike">${picRequesterCell}</td>
       <td>${deadlineCell}</td>
       <td>${picDesainerCell}</td>
@@ -758,6 +779,12 @@ function getStatusBadge(status) {
   const map = { 'Menunggu': 'menunggu', 'Dalam Proses': 'proses', 'Selesai': 'selesai', 'Ditolak': 'ditolak', 'Revisi': 'revisi' };
   const icons = { 'Menunggu': '⏳', 'Dalam Proses': '⚙️', 'Selesai': '✅', 'Ditolak': '❌', 'Revisi': '🔄' };
   return `<span class="status-badge ${map[status]||''}">${icons[status]||''} ${status}</span>`;
+}
+function getPriorityBadge(p) {
+  if (!p) return '<span style="color:var(--gray-400);font-size:12px">–</span>';
+  const map = { 'Rendah': 'priority-rendah', 'Normal': 'priority-normal', 'Tinggi': 'priority-tinggi', 'Mendesak': 'priority-mendesak' };
+  const icons = { 'Rendah': '🟢', 'Normal': '🟡', 'Tinggi': '🟠', 'Mendesak': '🔴' };
+  return `<span class="priority-badge ${map[p]||''}">${icons[p]||''} ${p}</span>`;
 }
 function escHTML(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function escAttr(s) { return String(s||'').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
@@ -823,10 +850,11 @@ function openModal(editId) {
   document.getElementById('f_nama').value = r?.nama || '';
   document.getElementById('f_wa').value = r?.wa || '';
   document.getElementById('f_deadline').value = r?.deadline || '';
+  document.getElementById('f_prioritas').value = r?.prioritas || '';
 
   // Field requester: disabled saat edit & bukan desainer
   const lockRequesterFields = isEdit && !isDesignerMode;
-  ['f_divisi','f_lembaga','f_tipe','f_judul','f_gambaran','f_nama','f_wa','f_deadline'].forEach(id => {
+  ['f_divisi','f_lembaga','f_tipe','f_judul','f_gambaran','f_nama','f_wa','f_deadline','f_prioritas'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.disabled = lockRequesterFields;
   });
@@ -886,6 +914,10 @@ async function saveRequest() {
   if (!divisiVal || !lembagaVal || !judul || !nama || !wa || !tipeVal) {
     toast('Harap lengkapi semua field yang wajib diisi', 'error'); return;
   }
+  const prioritasVal = document.getElementById('f_prioritas').value;
+  if (!prioritasVal) {
+    toast('Harap pilih Skala Prioritas', 'error'); return;
+  }
 
   const btn = document.getElementById('saveBtn');
   btn.disabled = true; btn.textContent = '⏳ Menyimpan...';
@@ -900,6 +932,7 @@ async function saveRequest() {
     tipeCustom: tipeSel === 'Lainnya...' ? tipeCustom : '',
     nama, wa: wa.replace(/\D/g,''),
     deadline: document.getElementById('f_deadline').value,
+    prioritas: document.getElementById('f_prioritas').value,
     pic: isDesignerMode ? document.getElementById('f_pic').value : (editingId ? (requests.find(r=>r.id===editingId)?.pic||'') : ''),
     estimasi: isDesignerMode ? document.getElementById('f_estimasi').value.trim() : (editingId ? (requests.find(r=>r.id===editingId)?.estimasi||'') : ''),
     status: isDesignerMode ? document.getElementById('f_status').value : (editingId ? (requests.find(r=>r.id===editingId)?.status||'Menunggu') : 'Menunggu'),
