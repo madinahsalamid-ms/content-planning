@@ -490,6 +490,13 @@
 // ════════════════════════════════════════════
 const DESIGNER_PASSWORD = 'MSwisata2024';
 
+// Nomor WhatsApp Tim Desainer
+const DESIGNER_CONTACTS = {
+  'Zidan':  '6285156615561',
+  'Ayyash': '6281779940421',
+  'Dani':   '6287772368128'
+};
+
 // URL Google Apps Script kamu (diisi setelah ikuti panduan)
 // Bisa juga diisi langsung di sini:
 // const SCRIPT_URL = 'https://script.google.com/macros/s/XXXXXX/exec';
@@ -680,35 +687,69 @@ function renderTable() {
     const tipLabel = r.tipeCustom || r.tipe;
     const statusBadge = getStatusBadge(r.status);
     const locked = !isDesignerMode;
+
+    // Kolom requester — editable hanya untuk desainer
+    const judulCell = locked
+      ? `<div class="cell-locked" style="font-style:normal;color:var(--gray-900)">${escHTML(r.judul||'–')}</div>`
+      : `<input class="cell-input" value="${escAttr(r.judul)}" onchange="updateField('${r.id}','judul',this.value)" placeholder="Judul konten">`;
+    const gambaranCell = locked
+      ? `<div class="cell-locked" style="font-style:normal;color:var(--gray-900);white-space:pre-line">${escHTML(r.gambaran||'–')}</div>`
+      : `<textarea class="cell-textarea" onchange="updateField('${r.id}','gambaran',this.value)" placeholder="Gambaran isi...">${escHTML(r.gambaran)}</textarea>`;
+    const deadlineCell = locked
+      ? `<div class="cell-locked" style="font-style:normal;color:var(--gray-900)">${escHTML(r.deadline||'–')}</div>`
+      : `<input class="cell-input" type="date" value="${escAttr(r.deadline)}" onchange="updateField('${r.id}','deadline',this.value)">`;
+    const picRequesterCell = locked
+      ? `<div class="wa-group">
+           <div style="font-size:12px;font-weight:600;padding:2px 0">${escHTML(r.nama||'–')}</div>
+           <div class="wa-row">
+             <span style="font-size:12px;font-family:monospace;color:var(--gray-600)">${escHTML(r.wa||'')}</span>
+             ${r.wa ? `<a class="wa-btn" href="https://wa.me/${(r.wa||'').replace(/\D/g,'')}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg></a>` : ''}
+           </div>
+         </div>`
+      : `<div class="wa-group">
+           <input class="wa-name-input" value="${escAttr(r.nama)}" placeholder="Nama PIC" onchange="updateField('${r.id}','nama',this.value)">
+           <div class="wa-row">
+             <input class="wa-num-input" value="${escAttr(r.wa)}" placeholder="628..." onchange="updateField('${r.id}','wa',this.value)">
+             ${r.wa ? `<a class="wa-btn" href="https://wa.me/${(r.wa||'').replace(/\D/g,'')}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg></a>` : ''}
+           </div>
+         </div>`;
+
+    // Kolom PIC Desainer — tampilkan nama + WA desainer untuk konfirmasi perubahan konten
+    const desainerWa = r.pic ? DESIGNER_CONTACTS[r.pic] : null;
+    const picDesainerCell = locked
+      ? `<div class="wa-group">
+           <div class="cell-locked" style="${r.pic ? 'font-style:normal;font-weight:600;color:var(--gray-900)' : ''}">🔒 ${escHTML(r.pic||'–')}</div>
+           ${desainerWa ? `<div class="wa-row" style="margin-top:2px">
+             <span style="font-size:11px;font-family:monospace;color:var(--gray-500)">${desainerWa}</span>
+             <a class="wa-btn" style="width:22px;height:22px" href="https://wa.me/${desainerWa}?text=Halo%20${encodeURIComponent(r.pic)}%2C%20saya%20ingin%20konfirmasi%20perubahan%20konten%20request%20%22${encodeURIComponent(r.judul||'')}%22" target="_blank" rel="noopener" title="Konfirmasi perubahan ke ${escHTML(r.pic)}"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg></a>
+           </div>` : ''}
+         </div>`
+      : `<select class="cell-locked-editable" onchange="updateField('${r.id}','pic',this.value)"><option value="">–</option><option ${r.pic==='Dani'?'selected':''}>Dani</option><option ${r.pic==='Ayyash'?'selected':''}>Ayyash</option><option ${r.pic==='Zidan'?'selected':''}>Zidan</option></select>`;
+
+    // Tombol aksi — hanya desainer yang bisa edit & hapus
+    const actionCell = isDesignerMode
+      ? `<div class="action-cell">
+           <button class="btn-icon" title="Edit" onclick="openEditModal('${r.id}')">✏️</button>
+           <button class="del-btn" title="Hapus" onclick="deleteRequest('${r.id}')">
+             <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+           </button>
+         </div>`
+      : `<div class="action-cell"><span style="font-size:11px;color:var(--gray-400)">🔒</span></div>`;
+
     return `<tr class="${isDitolak ? 'ditolak-row' : ''}" data-id="${r.id}">
       <td class="num">${i+1}</td>
       <td class="no-strike">${escHTML(divLabel)}</td>
       <td class="no-strike">${escHTML(lemLabel)}</td>
-      <td><input class="cell-input" value="${escAttr(r.judul)}" onchange="updateField('${r.id}','judul',this.value)" placeholder="Judul konten"></td>
-      <td><textarea class="cell-textarea" onchange="updateField('${r.id}','gambaran',this.value)" placeholder="Gambaran isi...">${escHTML(r.gambaran)}</textarea></td>
+      <td>${judulCell}</td>
+      <td>${gambaranCell}</td>
       <td class="no-strike">${escHTML(tipLabel)}</td>
-      <td class="no-strike">
-        <div class="wa-group">
-          <input class="wa-name-input" value="${escAttr(r.nama)}" placeholder="Nama PIC" onchange="updateField('${r.id}','nama',this.value)">
-          <div class="wa-row">
-            <input class="wa-num-input" value="${escAttr(r.wa)}" placeholder="628..." onchange="updateField('${r.id}','wa',this.value)">
-            ${r.wa ? `<a class="wa-btn" href="https://wa.me/${(r.wa||'').replace(/\D/g,'')}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg></a>` : ''}
-          </div>
-        </div>
-      </td>
-      <td><input class="cell-input" type="date" value="${escAttr(r.deadline)}" onchange="updateField('${r.id}','deadline',this.value)"></td>
-      <td>${locked ? `<div class="cell-locked">🔒 ${escHTML(r.pic||'–')}</div>` : `<select class="cell-locked-editable" onchange="updateField('${r.id}','pic',this.value)"><option value="">–</option><option ${r.pic==='Dani'?'selected':''}>Dani</option><option ${r.pic==='Ayyash'?'selected':''}>Ayyash</option><option ${r.pic==='Zidan'?'selected':''}>Zidan</option></select>`}</td>
+      <td class="no-strike">${picRequesterCell}</td>
+      <td>${deadlineCell}</td>
+      <td>${picDesainerCell}</td>
       <td>${locked ? `<div class="cell-locked">🔒 ${escHTML(r.estimasi||'–')}</div>` : `<input class="cell-locked-editable" value="${escAttr(r.estimasi)}" placeholder="mis: 2 hari" onchange="updateField('${r.id}','estimasi',this.value)">`}</td>
       <td>${locked ? `<div class="cell-locked" style="padding:4px 6px">${statusBadge}</div>` : `<select class="cell-locked-editable" onchange="updateStatusField('${r.id}',this.value)"><option value="Menunggu" ${r.status==='Menunggu'?'selected':''}>⏳ Menunggu</option><option value="Dalam Proses" ${r.status==='Dalam Proses'?'selected':''}>⚙️ Dalam Proses</option><option value="Revisi" ${r.status==='Revisi'?'selected':''}>🔄 Revisi</option><option value="Selesai" ${r.status==='Selesai'?'selected':''}>✅ Selesai</option><option value="Ditolak" ${r.status==='Ditolak'?'selected':''}>❌ Ditolak</option></select>`}</td>
       <td class="no-strike">${locked ? (r.link ? `<a class="link-open" href="${escAttr(r.link)}" target="_blank">📂</a>` : '<span style="color:var(--gray-400);font-size:12px">–</span>') : `<div class="link-group"><input class="link-input cell-locked-editable" value="${escAttr(r.link)}" placeholder="https://drive.google.com/..." onchange="updateField('${r.id}','link',this.value)">${r.link ? `<a class="link-open" href="${escAttr(r.link)}" target="_blank">📂</a>` : ''}</div>`}</td>
-      <td class="no-strike">
-        <div class="action-cell">
-          <button class="btn-icon" title="Edit" onclick="openEditModal('${r.id}')">✏️</button>
-          <button class="del-btn" title="Hapus" onclick="deleteRequest('${r.id}')">
-            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
-          </button>
-        </div>
-      </td>
+      <td class="no-strike">${actionCell}</td>
     </tr>`;
   }).join('');
 }
@@ -728,7 +769,12 @@ function uid() { return Date.now().toString(36) + Math.random().toString(36).sli
 async function updateField(id, field, value) {
   const r = requests.find(x => x.id === id);
   if (!r) return;
-  if (['pic','estimasi','status','link'].includes(field) && !isDesignerMode) return;
+  // Requester tidak boleh mengubah field apapun pada request yang sudah ada
+  if (!isDesignerMode) {
+    toast('Hanya Tim Desainer yang dapat mengubah data request. Hubungi desainer untuk perubahan.', 'error');
+    renderTable(); // reset visual
+    return;
+  }
   r[field] = value;
   if (field === 'status') renderTable(); else updateStats();
   await saveToSheet('update', r);
@@ -743,6 +789,10 @@ async function updateStatusField(id, value) {
 // DELETE
 // ════════════════════════════════════════════
 async function deleteRequest(id) {
+  if (!isDesignerMode) {
+    toast('Hanya Tim Desainer yang dapat menghapus request.', 'error');
+    return;
+  }
   if (!confirm('Hapus request ini? Tindakan ini tidak dapat dibatalkan.')) return;
   const ok = await saveToSheet('delete', { id });
   if (ok) {
@@ -758,8 +808,13 @@ async function deleteRequest(id) {
 function openModal(editId) {
   editingId = editId || null;
   const r = editId ? requests.find(x => x.id === editId) : null;
+  const isEdit = !!editId;
+  const canEdit = isDesignerMode; // hanya desainer yang boleh edit
+
   document.getElementById('modalTitle').textContent = editId ? '✏️ Edit Request' : '➕ Tambah Request Baru';
-  document.getElementById('modalSubtitle').textContent = editId ? 'Ubah data permintaan desain' : 'Isi data permintaan desain konten';
+  document.getElementById('modalSubtitle').textContent = editId
+    ? (isDesignerMode ? 'Ubah data permintaan desain' : '🔒 Hanya Tim Desainer yang dapat mengubah request yang sudah masuk')
+    : 'Isi data permintaan desain konten';
   setModalField('f_divisi', r?.divisi || '', 'f_divisi_custom', r?.divisiCustom || '');
   setModalField('f_lembaga', r?.lembaga || '', 'f_lembaga_custom', r?.lembagaCustom || '');
   setModalField('f_tipe', r?.tipe || '', 'f_tipe_custom', r?.tipeCustom || '');
@@ -768,12 +823,34 @@ function openModal(editId) {
   document.getElementById('f_nama').value = r?.nama || '';
   document.getElementById('f_wa').value = r?.wa || '';
   document.getElementById('f_deadline').value = r?.deadline || '';
+
+  // Field requester: disabled saat edit & bukan desainer
+  const lockRequesterFields = isEdit && !isDesignerMode;
+  ['f_divisi','f_lembaga','f_tipe','f_judul','f_gambaran','f_nama','f_wa','f_deadline'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = lockRequesterFields;
+  });
+  ['f_divisi_custom','f_lembaga_custom','f_tipe_custom'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = lockRequesterFields;
+  });
+
+  // Field desainer: selalu disabled untuk requester
   const des = isDesignerMode;
   ['f_pic','f_estimasi','f_status','f_link'].forEach(id => { document.getElementById(id).disabled = !des; });
   document.getElementById('f_pic').value = r?.pic || '';
   document.getElementById('f_estimasi').value = r?.estimasi || '';
   document.getElementById('f_status').value = r?.status || 'Menunggu';
   document.getElementById('f_link').value = r?.link || '';
+
+  // Tombol simpan: sembunyikan jika requester mencoba edit
+  const saveBtn = document.getElementById('saveBtn');
+  if (isEdit && !isDesignerMode) {
+    saveBtn.style.display = 'none';
+  } else {
+    saveBtn.style.display = '';
+  }
+
   document.getElementById('modalOverlay').classList.add('open');
 }
 
