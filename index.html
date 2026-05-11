@@ -653,6 +653,12 @@ function sanitizeRow(r) {
     'gambaran','tipe','tipeCustom','nama','wa','deadline','prioritas','pic','estimasi','status','link'];
   const clean = {};
   fields.forEach(f => { clean[f] = String(r[f] ?? ''); });
+
+  // ✅ Normalisasi deadline — ambil YYYY-MM-DD saja
+  if (clean.deadline && clean.deadline.includes('T')) {
+    clean.deadline = clean.deadline.split('T')[0];
+  }
+
   return clean;
 }
 
