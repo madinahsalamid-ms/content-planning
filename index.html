@@ -265,6 +265,10 @@
     .config-input-row { flex-direction: column; }
     .config-input { min-width: unset; width: 100%; }
   }
+  .detail-item { display:flex; flex-direction:column; gap:4px; }
+.detail-label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.6px; color:var(--gray-500); }
+.detail-value { font-size:13px; color:var(--gray-900); font-weight:500; }
+.detail-item.full { grid-column: 1 / -1; }
 </style>
 </head>
 <body>
@@ -401,7 +405,25 @@
     </div>
   </div>
 </div>
-
+<!-- MODAL DETAIL -->
+<div class="modal-overlay" id="detailOverlay">
+  <div class="modal" style="max-width:680px">
+    <div class="modal-header">
+      <div>
+        <h2 id="detailJudul">–</h2>
+        <p id="detailSubtitle">Detail Request</p>
+      </div>
+      <button class="modal-close" onclick="closeDetailModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px" id="detailContent"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeDetailModal()">Tutup</button>
+    </div>
+  </div>
+</div>
+  
 <!-- TOAST -->
 <div class="toast-container" id="toastContainer"></div>
 
@@ -771,7 +793,7 @@ function renderTable() {
          </div>`
       : `<div class="action-cell"><span style="font-size:11px;color:var(--gray-400)">🔒</span></div>`;
 
-    return `<tr class="${isDitolak ? 'ditolak-row' : ''}" data-id="${r.id}">
+    return `<tr class="${isDitolak ? 'ditolak-row' : ''}" data-id="${r.id}" onclick="openDetailModal('${r.id}')" style="cursor:pointer">
       <td class="num">${i+1}</td>
       <td class="no-strike">${escHTML(divLabel)}</td>
       <td class="no-strike">${escHTML(lemLabel)}</td>
@@ -1023,7 +1045,47 @@ function toast(msg, type = '') {
   document.getElementById('toastContainer').appendChild(el);
   setTimeout(() => el.remove(), 3500);
 }
+// ════════════════════════════════════════════
+// MODAL DETAIL
+// ════════════════════════════════════════════
+function openDetailModal(id) {
+  const r = requests.find(x => x.id === id);
+  if (!r) return;
+  document.getElementById('detailJudul').textContent = r.judul || '–';
+  document.getElementById('detailSubtitle').textContent = (r.divisiCustom || r.divisi || '') + ' · ' + (r.lembagaCustom || r.lembaga || '');
 
+  const fields = [
+    { label: 'Divisi', value: r.divisiCustom || r.divisi },
+    { label: 'Lembaga', value: r.lembagaCustom || r.lembaga },
+    { label: 'Tipe Konten', value: r.tipeCustom || r.tipe },
+    { label: 'Prioritas', value: r.prioritas },
+    { label: 'Deadline', value: r.deadline },
+    { label: 'Status', value: r.status },
+    { label: 'PIC Requester', value: r.nama },
+    { label: 'No. WhatsApp', value: r.wa },
+    { label: 'PIC Desainer', value: r.pic || '–' },
+    { label: 'Estimasi', value: r.estimasi || '–' },
+    { label: 'Gambaran Konten', value: r.gambaran || '–', full: true },
+    { label: 'Link Hasil', value: r.link || '–', full: true, isLink: r.link },
+  ];
+
+  document.getElementById('detailContent').innerHTML = fields.map(f => `
+    <div class="detail-item ${f.full ? 'full' : ''}">
+      <span class="detail-label">${f.label}</span>
+      <span class="detail-value">${f.isLink
+        ? `<a href="${escAttr(f.value)}" target="_blank" rel="noopener" style="color:var(--green-dark)">${escHTML(f.value)}</a>`
+        : escHTML(f.value || '–')}
+      </span>
+    </div>
+  `).join('');
+
+  document.getElementById('detailOverlay').classList.add('open');
+}
+
+function closeDetailModal() {
+  document.getElementById('detailOverlay').classList.remove('open');
+}
+  
 // ════════════════════════════════════════════
 // EVENTS
 // ════════════════════════════════════════════
