@@ -470,6 +470,13 @@
     <select class="filter-select" id="filterDivisi" onchange="renderTable()">
       <option value="">Semua Divisi</option>
     </select>
+    <select class="filter-select" id="filterPrioritas" onchange="renderTable()">
+  <option value="">Semua Prioritas</option>
+  <option>Rendah</option>
+  <option>Normal</option>
+  <option>Tinggi</option>
+  <option>Mendesak</option>
+</select>
     <span class="result-count" id="resultCount"></span>
   </div>
 
@@ -691,13 +698,15 @@ function renderTable() {
   const q = document.getElementById('searchInput').value.toLowerCase();
   const fs = document.getElementById('filterStatus').value;
   const fd = document.getElementById('filterDivisi').value;
+  const fp = document.getElementById('filterPrioritas').value;
   let filtered = requests.filter(r => {
     const divLabel = r.divisiCustom || r.divisi;
     const tipLabel = r.tipeCustom || r.tipe;
     const match = !q || [r.judul, r.nama, divLabel, r.lembagaCustom || r.lembaga, tipLabel].some(v => (v||'').toLowerCase().includes(q));
     const statusMatch = !fs || r.status === fs;
     const divMatch = !fd || divLabel === fd;
-    return match && statusMatch && divMatch;
+    const prioritasMatch = !fp || r.prioritas === fp;
+    return match && statusMatch && divMatch && prioritasMatch;
   });
   document.getElementById('resultCount').textContent = `${filtered.length} request ditampilkan`;
   const tbody = document.getElementById('tableBody');
