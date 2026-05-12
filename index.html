@@ -793,7 +793,7 @@ function renderTable() {
          </div>`
       : `<div class="action-cell"><span style="font-size:11px;color:var(--gray-400)">🔒</span></div>`;
 
-    return `<tr class="${isDitolak ? 'ditolak-row' : ''}" data-id="${r.id}" onclick="openDetailModal('${r.id}')" style="cursor:pointer">
+    return `<tr class="${isDitolak ? 'ditolak-row' : ''}" data-id="${r.id}" onclick="openDetailModal('${r.id}', event)" style="cursor:pointer">
       <td class="num">${i+1}</td>
       <td class="no-strike">${escHTML(divLabel)}</td>
       <td class="no-strike">${escHTML(lemLabel)}</td>
@@ -1048,7 +1048,8 @@ function toast(msg, type = '') {
 // ════════════════════════════════════════════
 // MODAL DETAIL
 // ════════════════════════════════════════════
-function openDetailModal(id) {
+function openDetailModal(id, event) {
+  if (event && event.target.closest('input, select, textarea, button, a')) return;
   const r = requests.find(x => x.id === id);
   if (!r) return;
   document.getElementById('detailJudul').textContent = r.judul || '–';
