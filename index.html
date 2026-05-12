@@ -499,6 +499,12 @@
   <option>Tinggi</option>
   <option>Mendesak</option>
 </select>
+    <select class="filter-select" id="filterDesainer" onchange="renderTable()">
+  <option value="">Semua Desainer</option>
+  <option>Dani</option>
+  <option>Ayyash</option>
+  <option>Zidan</option>
+</select>
     <span class="result-count" id="resultCount"></span>
   </div>
 
@@ -721,14 +727,15 @@ function renderTable() {
   const fs = document.getElementById('filterStatus').value;
   const fd = document.getElementById('filterDivisi').value;
   const fp = document.getElementById('filterPrioritas').value;
+  const fdes = document.getElementById('filterDesainer').value;
   let filtered = requests.filter(r => {
     const divLabel = r.divisiCustom || r.divisi;
     const tipLabel = r.tipeCustom || r.tipe;
     const match = !q || [r.judul, r.nama, divLabel, r.lembagaCustom || r.lembaga, tipLabel].some(v => (v||'').toLowerCase().includes(q));
     const statusMatch = !fs || r.status === fs;
     const divMatch = !fd || divLabel === fd;
-    const prioritasMatch = !fp || r.prioritas === fp;
-    return match && statusMatch && divMatch && prioritasMatch;
+    const desainerMatch = !fdes || r.pic === fdes;
+    return match && statusMatch && divMatch && prioritasMatch && desainerMatch;
   });
   document.getElementById('resultCount').textContent = `${filtered.length} request ditampilkan`;
   const tbody = document.getElementById('tableBody');
