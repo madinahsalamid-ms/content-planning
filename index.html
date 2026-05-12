@@ -698,7 +698,12 @@ function sanitizeRow(r) {
 
   return clean;
 }
-
+function formatTanggal(str) {
+  if (!str) return '–';
+  const parts = str.split('-');
+  if (parts.length !== 3) return str;
+  return `${parts[2]}-${parts[1]}-${parts[0]}`;
+}
 // ════════════════════════════════════════════
 // STATS
 // ════════════════════════════════════════════
@@ -763,7 +768,7 @@ function renderTable() {
       ? (r.gambaran ? `<div class="link-group"><a class="link-open" href="${escAttr(r.gambaran)}" target="_blank" rel="noopener" title="Buka link konten">📄</a><span style="font-size:11px;color:var(--gray-500);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:130px;display:inline-block;vertical-align:middle">${escHTML(r.gambaran)}</span></div>` : '<span style="color:var(--gray-400);font-size:12px">–</span>')
       : `<div class="link-group"><input class="link-input cell-locked-editable" value="${escAttr(r.gambaran)}" placeholder="https://docs.google.com/..." onchange="updateField('${r.id}','gambaran',this.value)">${r.gambaran ? `<a class="link-open" href="${escAttr(r.gambaran)}" target="_blank" rel="noopener">📄</a>` : ''}</div>`;
     const deadlineCell = locked
-      ? `<div class="cell-locked" style="font-style:normal;color:var(--gray-900)">${escHTML(r.deadline||'–')}</div>`
+      ? `<div class="cell-locked" style="font-style:normal;color:var(--gray-900)">${escHTML(formatTanggal(r.deadline))}</div>`
       : `<input class="cell-input" type="date" value="${escAttr(r.deadline)}" onchange="updateField('${r.id}','deadline',this.value)">`;
     const picRequesterCell = locked
       ? `<div class="wa-group">
@@ -1070,7 +1075,7 @@ function openDetailModal(id, event) {
     { label: 'Lembaga', value: r.lembagaCustom || r.lembaga },
     { label: 'Tipe Konten', value: r.tipeCustom || r.tipe },
     { label: 'Prioritas', value: r.prioritas },
-    { label: 'Deadline', value: r.deadline },
+    { label: 'Deadline', value: formatTanggal(r.deadline) },
     { label: 'Status', value: r.status },
     { label: 'PIC Requester', value: r.nama },
     { label: 'No. WhatsApp', value: r.wa },
