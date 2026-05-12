@@ -734,6 +734,7 @@ function renderTable() {
     const match = !q || [r.judul, r.nama, divLabel, r.lembagaCustom || r.lembaga, tipLabel].some(v => (v||'').toLowerCase().includes(q));
     const statusMatch = !fs || r.status === fs;
     const divMatch = !fd || divLabel === fd;
+    const prioritasMatch = ! fp | | r.prioritas === fp;
     const desainerMatch = !fdes || r.pic === fdes;
     return match && statusMatch && divMatch && prioritasMatch && desainerMatch;
   });
