@@ -754,7 +754,8 @@ function updateStats(filteredData = requests) {
 function updateDivisiFilter() {
   const sel = document.getElementById('filterDivisi');
   const cur = sel.value;
-  const divs = [...new Set(requests.map(r => r.divisiCustom || r.divisi).filter(Boolean))].sort();
+  const baseData = activeLembaga === 'Semua Lembaga' ? requests : requests.filter(r => (r.lembagaCustom || r.lembaga) === activeLembaga);
+  const divs = [...new Set(baseData.map(r => r.divisiCustom || r.divisi).filter(Boolean))].sort();
   sel.innerHTML = '<option value="">Semua Divisi</option>' + divs.map(d => `<option ${d===cur?'selected':''}>${d}</option>`).join('');
 }
 
