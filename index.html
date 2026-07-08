@@ -718,8 +718,20 @@ function formatTanggal(str) {
 // TABS LEMBAGA
 // ════════════════════════════════════════════
 function renderTabs() {
-  const lembagaList = [...new Set(requests.map(r => r.lembagaCustom || r.lembaga).filter(Boolean))].sort();
-  const tabs = ['Semua Lembaga', ...lembagaList];
+  const baseLembaga = [
+    'Yayasan Madinah Salam',
+    'Diploma Bahasa Arab',
+    'Diploma Ilmi',
+    'Diploma Quran',
+    'Kampus Madinah Salam',
+    'Kursus Madinah Salam',
+    'Madinah Salam Wisata'
+  ];
+  
+  const existingLembaga = [...new Set(requests.map(r => r.lembagaCustom || r.lembaga).filter(Boolean))];
+  const allLembaga = [...new Set([...baseLembaga, ...existingLembaga])];
+  
+  const tabs = ['Semua Lembaga', ...allLembaga];
   
   if (!tabs.includes(activeLembaga)) activeLembaga = 'Semua Lembaga';
 
