@@ -452,22 +452,20 @@
 
   <!-- CONFIG BANNER -->
   <div class="config-banner" id="configBanner">
-    <h3>⚙️ Belum terhubung ke Google Sheets</h3>
+    <h3>⚙️ Konfigurasi Firebase Diperlukan</h3>
     <p>
-      Tempelkan <strong>URL Google Apps Script</strong> kamu di bawah, lalu klik Simpan.<br>
-      Belum punya URL-nya? Ikuti panduan di file <code>PANDUAN_SETUP.txt</code> yang sudah disertakan.
+      Kamu belum memasukkan <code>firebaseConfig</code> ke dalam script. <br>
+      Buka file <code>index.html</code> dengan code editor, cari bagian <strong>FIREBASE CONFIGURATION</strong> dan masukkan API Key kamu.
     </p>
     <div class="config-input-row">
-      <input type="text" class="config-input" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/XXXXXX.../exec">
-      <button class="btn btn-gold" onclick="saveScriptUrl()">💾 Simpan & Hubungkan</button>
-      <button class="btn btn-ghost btn-sm" onclick="dismissConfig()" style="white-space:nowrap">Nanti saja</button>
+      <button class="btn btn-ghost btn-sm" onclick="dismissConfig()">Tutup Pesan Ini</button>
     </div>
   </div>
 
   <!-- SYNC STATUS BAR -->
   <div class="sync-bar" id="syncBar">
     <span class="sync-dot setup" id="syncDot"></span>
-    <span class="sync-text" id="syncText">Belum terhubung ke Google Sheets</span>
+    <span class="sync-text" id="syncText">Mengecek koneksi Firebase...</span>
     <span class="sync-time" id="syncTime"></span>
     <button class="btn btn-ghost btn-sm" onclick="loadFromSheet()" style="margin-left:8px" id="refreshBtn">🔄 Refresh</button>
   </div>
@@ -540,6 +538,10 @@
   </div>
 </main>
 
+<!-- FIREBASE SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
 <script>
 // ════════════════════════════════════════════
 // KONFIGURASI — GANTI BAGIAN INI SETELAH SETUP
@@ -553,11 +555,24 @@ const DESIGNER_CONTACTS = {
   'Dani':   '6287772368128'
 };
 
-// URL Google Apps Script kamu (diisi setelah ikuti panduan)
-// Bisa juga diisi langsung di sini:
-// const SCRIPT_URL = 'https://script.google.com/macros/s/XXXXXX/exec';
-let SCRIPT_URL = localStorage.getItem('gs_script_url') || 'https://script.google.com/macros/s/AKfycbwsvEe1HqqjfuK3jpICMFbpx-ArZDy0LT6gk6rJEQIiIPV-OtpzUiJv5gNIjywDgc80/exec';
+// ════════════════════════════════════════════
+// FIREBASE CONFIGURATION
+// ════════════════════════════════════════════
+// TODO: GANTI INI DENGAN CONFIG FIREBASE ANDA
+const firebaseConfig = {
+  apiKey: "API_KEY_ANDA",
+  authDomain: "content-planning-ms.firebaseapp.com",
+  projectId: "content-planning-ms",
+  storageBucket: "content-planning-ms.appspot.com",
+  messagingSenderId: "SENDER_ID",
+  appId: "APP_ID"
+};
 
+// Initialize Firebase
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
+const db = firebase.firestore();
 // ════════════════════════════════════════════
 // STATE
 // ════════════════════════════════════════════
@@ -570,26 +585,13 @@ let isSyncing = false;
 // SETUP / CONFIG UI
 // ════════════════════════════════════════════
 function checkConfig() {
-  if (!SCRIPT_URL) {
+  if (firebaseConfig.apiKey === "API_KEY_ANDA") {
     document.getElementById('configBanner').classList.add('show');
-    setSyncStatus('setup', 'Belum terhubung ke Google Sheets');
+    setSyncStatus('setup', 'Firebase belum dikonfigurasi');
   } else {
     document.getElementById('configBanner').classList.remove('show');
     loadFromSheet();
   }
-}
-
-function saveScriptUrl() {
-  const val = document.getElementById('scriptUrlInput').value.trim();
-  if (!val || !val.startsWith('https://script.google.com')) {
-    toast('URL tidak valid. Harus dimulai dengan https://script.google.com', 'error');
-    return;
-  }
-  SCRIPT_URL = val;
-  localStorage.setItem('gs_script_url', val);
-  document.getElementById('configBanner').classList.remove('show');
-  toast('URL tersimpan! Menghubungkan ke Google Sheets...', 'success');
-  loadFromSheet();
 }
 
 function dismissConfig() {
@@ -613,36 +615,27 @@ function setSyncTime() {
 }
 
 // ════════════════════════════════════════════
-// GOOGLE SHEETS — LOAD DATA
+// FIREBASE — LOAD DATA
 // ════════════════════════════════════════════
 async function loadFromSheet() {
-  if (!SCRIPT_URL) { setSyncStatus('setup', 'Belum terhubung — masukkan URL Apps Script'); return; }
+  if (firebaseConfig.apiKey === "API_KEY_ANDA") { setSyncStatus('setup', 'Belum terhubung ke Firebase'); return; }
   if (isSyncing) return;
   isSyncing = true;
-  setSyncStatus('loading', 'Memuat data dari Google Sheets...');
+  setSyncStatus('loading', 'Memuat data dari Firestore...');
   document.getElementById('refreshBtn').disabled = true;
   try {
-    const res = await fetch(SCRIPT_URL + '?action=getAll', { method: 'GET', redirect: 'follow' });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const text = await res.text();
-    let json;
-    try { json = JSON.parse(text); }
-    catch(pe) { throw new Error('Response bukan JSON — pastikan Apps Script sudah di-Deploy ulang'); }
-    if (json.status === 'ok') {
-      requests = (json.data || []).map(sanitizeRow);
-      setSyncStatus('ok', 'Terhubung ke Google Sheets ✓');
-      setSyncTime();
-      renderTable();
-    } else {
-      throw new Error(json.message || 'Status error dari Apps Script');
-    }
+    const snapshot = await db.collection('content-planning').get();
+    const data = [];
+    snapshot.forEach(doc => {
+      data.push({ id: doc.id, ...doc.data() });
+    });
+    requests = data.map(sanitizeRow);
+    setSyncStatus('ok', 'Terhubung ke Firebase ✓');
+    setSyncTime();
+    renderTable();
   } catch (e) {
     setSyncStatus('error', 'Gagal memuat — ' + e.message);
     toast('❌ ' + e.message, 'error');
-    const local = localStorage.getItem('cp_requests_backup');
-    if (local) {
-      try { requests = JSON.parse(local).map(sanitizeRow); renderTable(); toast('⚠️ Menampilkan data backup lokal', ''); } catch(_) {}
-    }
   } finally {
     isSyncing = false;
     document.getElementById('refreshBtn').disabled = false;
@@ -650,31 +643,22 @@ async function loadFromSheet() {
 }
 
 // ════════════════════════════════════════════
-// GOOGLE SHEETS — SAVE DATA
+// FIREBASE — SAVE DATA
 // ════════════════════════════════════════════
 async function saveToSheet(action, data) {
-  if (!SCRIPT_URL) {
-    toast('Belum terhubung ke Google Sheets. Masukkan URL Apps Script dulu.', 'error');
+  if (firebaseConfig.apiKey === "API_KEY_ANDA") {
+    toast('Firebase belum dikonfigurasi.', 'error');
     return false;
   }
   try {
-    const res = await fetch(SCRIPT_URL, {
-      method: 'POST',
-      redirect: 'follow',
-      body: JSON.stringify({ action, data })
-    });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const text = await res.text();
-    let json;
-    try { json = JSON.parse(text); }
-    catch(pe) { throw new Error('Response bukan JSON — deploy ulang Apps Script'); }
-    if (json.status === 'ok') {
-      localStorage.setItem('cp_requests_backup', JSON.stringify(requests));
-      setSyncTime();
-      return true;
+    const docRef = db.collection('content-planning').doc(data.id);
+    if (action === 'delete') {
+      await docRef.delete();
     } else {
-      throw new Error(json.message || 'Error dari Apps Script');
+      await docRef.set(data, { merge: true });
     }
+    setSyncTime();
+    return true;
   } catch (e) {
     toast('❌ Gagal simpan: ' + e.message, 'error');
     return false;
@@ -1108,8 +1092,8 @@ function closeDetailModal() {
 document.getElementById('modalOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
 document.getElementById('pwdOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) closePwdModal(); });
 
-// Auto-refresh setiap 60 detik
-setInterval(() => { if (SCRIPT_URL) loadFromSheet(); }, 60000);
+// Auto-refresh setiap 60 detik jika firebase sudah terkonfigurasi
+setInterval(() => { if (firebaseConfig.apiKey !== "API_KEY_ANDA") loadFromSheet(); }, 60000);
 
 // Init
 checkConfig();
